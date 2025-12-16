@@ -48,7 +48,6 @@ const authorize = (...roles) => {
 
 const logActivity = async (userId, fullAction, req, details = {}) => {
   try {
-    // 1. Split "LOGIN_SUCCESS" -> Action="LOGIN", Status="SUCCESS"
     let action = fullAction;
     let status = 'INFO';
 
@@ -62,7 +61,6 @@ const logActivity = async (userId, fullAction, req, details = {}) => {
 
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0';
     
-    // 2. Write to 'activityLog' (Correct Table) with 'details' (Correct Field)
     await prisma.activityLog.create({
       data: {
         userId: userId,
@@ -79,25 +77,30 @@ const logActivity = async (userId, fullAction, req, details = {}) => {
   }
 };
 
-const checkSuspiciousLogin = async (userId, req) => {
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+// 👇 NEW: THREAT INTELLIGENCE (Account Lockout Logic)
+const isAccountLocked = async (userId) => {
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000); // 15 minute window
   
   try {
-    // 3. Check 'activityLog' for failures
+    // Count how many failures occurred in the last 15 minutes
     const failedLogins = await prisma.activityLog.count({
       where: {
         userId,
         action: 'LOGIN',
         status: 'FAILURE',
-        createdAt: { gte: oneHourAgo },
+        createdAt: { gte: fifteenMinutesAgo },
       },
     });
 
+    // If 5 or more failures, return TRUE (Locked)
     if (failedLogins >= 5) {
-      console.warn(`🚨 BRUTE FORCE DETECTED for User ${userId}`);
+      console.warn(`🚨 ACCOUNT LOCKED: User ${userId} has ${failedLogins} failed attempts.`);
+      return true;
     }
+    return false;
   } catch (error) {
-    console.error("Error checking suspicious login:", error);
+    console.error("Error checking lockout:", error);
+    return false;
   }
 };
 
@@ -263,26 +266,22 @@ router.post('/register',
 /**
  * @swagger
  * /api/auth/login:
- *   post:
- *     summary: Login user
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LoginRequest'
- *     responses:
- *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
- *       400:
- *         description: Bad request
- *       401:
- *         description: Invalid credentials
+ * post:
+ * summary: Login user with Adaptive Defense
+ * tags: [Authentication]
+ * requestBody:
+ * required: true
+ * content:
+ * application/json:
+ * schema:
+ * $ref: '#/components/schemas/LoginRequest'
+ * responses:
+ * 200:
+ * description: Login successful
+ * 401:
+ * description: Invalid credentials
+ * 423:
+ * description: Account locked (Threat Intelligence)
  */
 router.post('/login',
   [body('email').isEmail().normalizeEmail(), body('password').notEmpty()],
@@ -297,57 +296,71 @@ router.post('/login',
 
       // Handle User Not Found or Inactive
       if (!user || !user.isActive) {
-        if (user) {
-          await logActivity(user.id, 'LOGIN_FAILED', req, { reason: 'inactive_or_fail' });
-          await checkSuspiciousLogin(user.id, req);
-        }
+        // We don't lock non-existent users to prevent DoS on signup, but we log the attempt
         return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
+
+      // 🛑 THREAT INTELLIGENCE CHECK: Is account locked?
+      if (await isAccountLocked(user.id)) {
+         // Log the blocked attempt without counting it as a new "password failure"
+         await logActivity(user.id, 'LOGIN_BLOCKED', req, { reason: 'account_locked' });
+         
+         return res.status(423).json({ 
+           success: false, 
+           message: 'Account temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.' 
+         });
       }
 
       // Verify Password
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
+        // Log failure (This increases the counter for isAccountLocked)
         await logActivity(user.id, 'LOGIN_FAILED', req, { reason: 'wrong_password' });
-        await checkSuspiciousLogin(user.id, req);
         return res.status(401).json({ success: false, message: 'Invalid credentials' });
       }
 
       // --- LOGIN SUCCESS ---
       await logActivity(user.id, 'LOGIN_SUCCESS', req);
 
-      // 🔍 NEW DEVICE DETECTION
+      // 🛡️ ZERO-TRUST ACCESS LOGIC (New Device & IP Detection)
       try {
-        const recentLogins = await prisma.activityLog.findMany({ // 👈 Changed table name
+        const recentLogins = await prisma.activityLog.findMany({
           where: {
             userId: user.id,
-            action: 'LOGIN',    // 👈 Changed to match new format
-            status: 'SUCCESS',  // 👈 Added status check
-            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+            action: 'LOGIN',
+            status: 'SUCCESS',
+            createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, // Check last 30 days
           },
           orderBy: { createdAt: 'desc' },
-          take: 5,
+          take: 20,
         });
 
-        // ... rest of your device detection logic is fine ...
-
         const currentDevice = req.headers['user-agent'];
-        // Check if current userAgent exists in recent history (excluding the log we just created)
-        // We filter out the current request log if it was picked up instantly, usually logically we check previous entries
-        const isNewDevice = !recentLogins.slice(1).some(log => log.userAgent === currentDevice);
+        const currentIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-        if (isNewDevice && recentLogins.length > 1) {
-             // Create notification
+        // Check history (skip the log we just created)
+        const previousHistory = recentLogins.slice(1);
+        
+        const isNewDevice = !previousHistory.some(log => log.userAgent === currentDevice);
+        const isNewIp = !previousHistory.some(log => log.ipAddress === currentIp);
+
+        if (isNewDevice || isNewIp) {
+             console.log(`⚠️ Zero-Trust Alert: New Context for User ${user.email}`);
+             
+             // Create notification for the user
              await prisma.notification.create({
                 data: {
                   userId: user.id,
-                  title: 'New Login Detected',
-                  message: `Login from new device.\nIP: ${req.ip}\nTime: ${new Date().toLocaleString()}`,
+                  title: 'Security Alert: New Sign-in',
+                  message: `We detected a login from a new ${isNewDevice ? 'device' : 'IP address'}.\nIP: ${currentIp}\nTime: ${new Date().toLocaleString()}`,
                   type: 'security',
                 },
              });
+             
+             // OPTIONAL: You could force MFA here if you wanted to be strict
         }
       } catch (logError) {
-        console.error("Device detection failed (non-blocking):", logError);
+        console.error("Zero-Trust detection failed (non-blocking):", logError);
       }
 
       // Handle MFA
@@ -381,6 +394,7 @@ router.post('/login',
     }
   }
 );
+
 /**
  * @swagger
  * /api/auth/me:
