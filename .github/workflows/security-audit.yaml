@@ -19,16 +19,13 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v3
 
-      # 1. Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # 2. Install Dependencies (Ignoring scripts prevents the husky error)
       - name: Install Dependencies
         run: npm install --ignore-scripts
 
-      # 3. Security Audit (This is your Module 6 requirement)
       - name: Run npm Security Audit
         run: npm audit --audit-level=high
