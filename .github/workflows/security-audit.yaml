@@ -19,16 +19,16 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v3
 
-      # 1. Setup Node (No caching to avoid lockfile errors)
+      # 1. Setup Node (Standard setup)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # 2. Install Dependencies (Ignore scripts to avoid Husky errors)
+      # 2. Install Dependencies (Ignoring scripts avoids the Husky error)
       - name: Install Dependencies
         run: npm install --ignore-scripts
 
-      # 3. Security Audit (The main requirement for Module 6)
+      # 3. Security Audit (This is the main requirement for Module 6)
       - name: Run npm Security Audit
         run: npm audit --audit-level=high
