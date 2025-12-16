@@ -19,17 +19,16 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v3
 
+      # 1. Setup Node (No caching to avoid lockfile errors)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          # Cache removed to fix the "lock file not found" error
 
+      # 2. Install Dependencies (Ignore scripts to avoid Husky errors)
       - name: Install Dependencies
-        # 👇 Added --ignore-scripts to fix the "husky" error
         run: npm install --ignore-scripts
 
+      # 3. Security Audit (The main requirement for Module 6)
       - name: Run npm Security Audit
-        # This scans for High/Critical vulnerabilities
         run: npm audit --audit-level=high
-        #test
