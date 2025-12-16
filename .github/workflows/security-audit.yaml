@@ -1,35 +1,37 @@
 name: Security & Quality Check
 
-# Trigger this scan whenever you push to main or open a Pull Request
 on:
   push:
-    branches: [ "**" ]  # Runs on ANY branch
+    branches: [ "**" ]
   pull_request:
     branches: [ "**" ]
 
 jobs:
   security_scan:
-    name: SAST & Vulnerability Scan
+    name: Backend Security Scan
     runs-on: ubuntu-latest
+    
+    # 👇 This tells the scanner to look inside your backend folder
+    defaults:
+      run:
+        working-directory: ./rentverse-backend-main
 
     steps:
-      # 1. Check out the code
       - name: Checkout Source Code
         uses: actions/checkout@v3
 
-      # 2. Install Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
+          # Tell setup-node where the cache file is
+          cache-dependency-path: ./rentverse-backend-main/package-lock.json
 
-      # 3. Install Dependencies
       - name: Install Dependencies
         run: npm install
 
-      # 4. Security Audit (Checks for vulnerable packages)
-      # This will fail the build if it finds HIGH or CRITICAL vulnerabilities
+      # This is the actual security check
       - name: Run npm Security Audit
         run: npm audit --audit-level=high
 
