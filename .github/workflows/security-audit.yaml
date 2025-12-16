@@ -23,13 +23,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          # 👇 I REMOVED THE CACHE LINES TO FIX THE CRASH
+          # Cache removed to fix the "lock file not found" error
 
-      # We use 'npm install' because it works with any package.json
-      # even if you usually use pnpm/bun
       - name: Install Dependencies
-        run: npm install
+        # 👇 Added --ignore-scripts to fix the "husky" error
+        run: npm install --ignore-scripts
 
-      # This runs the actual security scan
       - name: Run npm Security Audit
+        # This scans for High/Critical vulnerabilities
         run: npm audit --audit-level=high
