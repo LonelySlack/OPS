@@ -3,9 +3,9 @@ name: Security & Quality Check
 # Trigger this scan whenever you push to main or open a Pull Request
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "**" ]  # Runs on ANY branch
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "**" ]
 
 jobs:
   security_scan:
