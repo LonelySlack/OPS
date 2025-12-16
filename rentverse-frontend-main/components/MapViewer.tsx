@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useCallback, memo } from 'react'
 import * as maptilersdk from '@maptiler/sdk'
 
 // 1. Configure the API Key globally to ensure it's ready before map load.
-// This matches your .env file: NEXT_PUBLIC_MAPTILER_API_KEY
+// This matches your .env file: NEXT_PUBLIC_MAPTILER_API_KEY:)
 if (process.env.NEXT_PUBLIC_MAPTILER_API_KEY) {
   maptilersdk.config.apiKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
 }
