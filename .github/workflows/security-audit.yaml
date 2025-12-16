@@ -10,7 +10,7 @@ jobs:
   security_scan:
     name: Backend Security Scan
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
         working-directory: ./rentverse-backend-main
