@@ -3,11 +3,14 @@
 import React, { useRef, useEffect, useCallback, memo } from 'react'
 import * as maptilersdk from '@maptiler/sdk'
 
+// 1. Configure the API Key globally to ensure it's ready before map load.
+// This matches your .env file: NEXT_PUBLIC_MAPTILER_API_KEY
+if (process.env.NEXT_PUBLIC_MAPTILER_API_KEY) {
+  maptilersdk.config.apiKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
+}
+
 interface MapViewerProps {
-  center?: {
-    lng: number
-    lat: number
-  }
+  center?: { lng: number; lat: number }
   zoom?: number
   style?: string
   className?: string
@@ -25,44 +28,33 @@ interface MapViewerProps {
 }
 
 const MapViewer = memo(function MapViewer({
-                                            center = { lng: 139.753, lat: 35.6844 }, // Default to Tokyo
-                                            zoom = 14,
-                                            style = 'streets-v2',
-                                            className = '',
-                                            height = '100%',
-                                            width = '100%',
-                                            markers = [],
-                                            onMapLoad,
-                                            onMapClick,
-                                            interactive = true,
-                                          }: MapViewerProps) {
+  center = { lng: 139.753, lat: 35.6844 }, // Default to Tokyo
+  zoom = 14,
+  style = 'streets-v2',
+  className = '',
+  height = '100%',
+  width = '100%',
+  markers = [],
+  onMapLoad,
+  onMapClick,
+  interactive = true,
+}: MapViewerProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<maptilersdk.Map | null>(null)
   const markersRef = useRef<maptilersdk.Marker[]>([])
   const isMapLoaded = useRef(false)
 
-  // Initialize API key once
-  useEffect(() => {
-    if (!maptilersdk.config.apiKey) {
-      maptilersdk.config.apiKey = process.env.NEXT_PUBLIC_MAPTILER_API || ''
-    }
-  }, [])
-
-  // Clear existing markers
+  // Helper: Clear existing markers
   const clearMarkers = useCallback(() => {
     markersRef.current.forEach(marker => marker.remove())
     markersRef.current = []
   }, [])
 
-  // Add markers to map
+  // Helper: Add markers to map
   const addMarkers = useCallback((mapInstance: maptilersdk.Map) => {
     clearMarkers()
-
-    console.log('Adding markers to map:', markers.length)
     
-    markers.forEach((markerData, index) => {
-      console.log(`Creating marker ${index}:`, markerData)
-      
+    markers.forEach((markerData) => {
       const marker = new maptilersdk.Marker({
         color: markerData.color || '#3B82F6',
       })
@@ -77,37 +69,31 @@ const MapViewer = memo(function MapViewer({
 
       markersRef.current.push(marker)
     })
-    
-    console.log('Total markers added:', markersRef.current.length)
   }, [markers, clearMarkers])
 
-  // Initialize map
+  // EFFECT 1: Initialize Map (Runs ONLY ONCE on mount)
   useEffect(() => {
-    if (!mapContainer.current || map.current) return
+    if (map.current || !mapContainer.current) return
 
     try {
-      console.log('Initializing map with center:', [center.lng, center.lat])
-      
       map.current = new maptilersdk.Map({
         container: mapContainer.current,
         style: style,
         center: [center.lng, center.lat],
         zoom: zoom,
-        interactive: interactive,
+        interactive: interactive, // Ensure this is true
       })
 
       // Handle map load event
       map.current.on('load', () => {
-        console.log('Map loaded, setting isMapLoaded to true')
         isMapLoaded.current = true
         
         if (map.current && onMapLoad) {
           onMapLoad(map.current)
         }
         
-        // Add markers once map is loaded
+        // Add initial markers once map is loaded
         if (markers.length > 0 && map.current) {
-          console.log('Map loaded, adding initial markers')
           addMarkers(map.current)
         }
       })
@@ -125,6 +111,7 @@ const MapViewer = memo(function MapViewer({
       console.error('Error initializing map:', error)
     }
 
+    // Cleanup function (runs only when component unmounts)
     return () => {
       clearMarkers()
       if (map.current) {
@@ -133,44 +120,27 @@ const MapViewer = memo(function MapViewer({
         isMapLoaded.current = false
       }
     }
-  }, [style, center.lng, center.lat, zoom, interactive, onMapLoad, onMapClick, clearMarkers, markers, addMarkers])
+  }, []) // Empty dependency array = run once. Stops the "frozen map" bug.
 
-  // Update map center and zoom when props change
+  // EFFECT 2: Update View (Runs when center/zoom props change)
   useEffect(() => {
-    if (map.current && isMapLoaded.current) {
-      console.log('Updating map center to:', [center.lng, center.lat])
-      
-      try {
-        map.current.flyTo({
-          center: [center.lng, center.lat],
-          zoom: zoom,
-          duration: 1000,
-        })
-      } catch (error) {
-        console.error('Error updating map center:', error)
-      }
-    } else {
-      console.log('Skipping map center update - map not ready:', {
-        mapExists: !!map.current,
-        mapLoaded: isMapLoaded.current
+    if (map.current) {
+      map.current.flyTo({
+        center: [center.lng, center.lat],
+        zoom: zoom,
+        essential: true 
       })
     }
   }, [center.lng, center.lat, zoom])
 
-  // Update markers when markers prop changes
+  // EFFECT 3: Update Markers (Runs when markers prop changes)
   useEffect(() => {
     if (map.current && isMapLoaded.current) {
-      console.log('Markers changed, updating map markers')
       addMarkers(map.current)
-    } else {
-      console.log('Map not ready for markers yet:', { 
-        mapExists: !!map.current, 
-        mapLoaded: isMapLoaded.current 
-      })
     }
   }, [markers, addMarkers])
 
-  // Update map style when style prop changes
+  // EFFECT 4: Update Style (Runs when style prop changes)
   useEffect(() => {
     if (map.current) {
       map.current.setStyle(style)
