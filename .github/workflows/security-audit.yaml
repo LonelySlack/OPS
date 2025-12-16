@@ -11,7 +11,6 @@ jobs:
     name: Backend Security Scan
     runs-on: ubuntu-latest
     
-    # 👇 This tells the scanner to look inside your backend folder
     defaults:
       run:
         working-directory: ./rentverse-backend-main
@@ -24,19 +23,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          # Tell setup-node where the cache file is
-          cache-dependency-path: ./rentverse-backend-main/package-lock.json
+          # 👇 I REMOVED THE CACHE LINES TO FIX THE CRASH
 
+      # We use 'npm install' because it works with any package.json
+      # even if you usually use pnpm/bun
       - name: Install Dependencies
         run: npm install
 
-      # This is the actual security check
+      # This runs the actual security scan
       - name: Run npm Security Audit
         run: npm audit --audit-level=high
-
-      # 5. Static Code Analysis (Optional - requires ESLint setup)
-      # If you don't have ESLint set up, you can remove this step
-      - name: Static Code Analysis
-        run: npm run lint --if-present
-        continue-on-error: true
