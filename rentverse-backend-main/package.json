@@ -35,7 +35,7 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.3.1",
+    "@prisma/client": "^7.1.0",
     "@supabase/supabase-js": "^2.57.0",
     "apple-signin-auth": "^2.0.0",
     "axios": "^1.11.0",
@@ -48,6 +48,8 @@
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
     "express-validator": "^7.0.1",
+    "firebase": "^12.7.0",
+    "firebase-admin": "^13.6.0",
     "googleapis": "^159.0.0",
     "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
@@ -61,6 +63,7 @@
     "puppeteer": "^24.22.0",
     "qrcode": "^1.5.4",
     "react-signature-canvas": "1.1.0-alpha.2",
+    "socket.io": "^4.8.1",
     "speakeasy": "^2.0.0",
     "streamifier": "^0.1.1",
     "swagger-jsdoc": "^6.2.8",
@@ -77,7 +80,7 @@
     "node-fetch": "^2.7.0",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
-    "prisma": "^5.3.1"
+    "prisma": "^7.1.0"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [

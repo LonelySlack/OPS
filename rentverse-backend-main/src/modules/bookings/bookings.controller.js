@@ -170,6 +170,8 @@ class BookingsController {
         success: true,
         message: 'Booking approved successfully',
         data: { booking },
+        const :{ sendPush } = require('../utils/push'),
+        await : sendPush (user.fcmToken, 'New Booking', 'Your booking has been approved!')
       });
     } catch (error) {
       console.error('Approve booking error:', error);

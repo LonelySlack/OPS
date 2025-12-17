@@ -3,8 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 // 👇 USE THIS IMPORT TO BE SAFE
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { passport } = require('../config/passport');
