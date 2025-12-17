@@ -152,6 +152,7 @@ export interface PropertiesState {
 
 // Enhanced search filters to match backend API
 export interface SearchFilters {
+  search?: string;
   page?: number
   limit?: number
   type?: string

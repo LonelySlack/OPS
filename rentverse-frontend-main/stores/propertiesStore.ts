@@ -172,6 +172,7 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
       // Build query parameters
       const params = new URLSearchParams()
       
+      if (filters?.search) params.append('search', filters.search)
       if (filters?.page) params.append('page', filters.page.toString())
       if (filters?.limit) params.append('limit', filters.limit.toString())
       if (filters?.type) params.append('type', filters.type)

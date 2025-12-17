@@ -1,5 +1,6 @@
 const propertiesService = require('./properties.service');
 const { validationResult } = require('express-validator');
+const { search } = require('./properties.routes');
 
 // 🆕 AUTO-APPROVE PROPERTIES STATUS GLOBAL
 let propertyAutoApproveStatus = {
@@ -11,12 +12,14 @@ let propertyAutoApproveStatus = {
 class PropertiesController {
   async getAllProperties(req, res) {
     try {
+      console.log('CONTROLLER RECEIVED SEARCH:', req.query.search);
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const userId = req.user?.id; // Get user ID if authenticated
       const userRole = req.user?.role || 'USER'; // Get user role
 
       const filters = {
+        search: req.query.search,
         propertyTypeId: req.query.propertyTypeId,
         city: req.query.city,
         available: req.query.available,

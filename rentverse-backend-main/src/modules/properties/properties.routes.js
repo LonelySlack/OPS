@@ -4,6 +4,7 @@ const { auth, authorize } = require('../../middleware/auth');
 const propertiesController = require('./properties.controller');
 const propertyViewsController = require('../propertyViews/propertyViews.controller');
 
+
 const router = express.Router();
 
 /**

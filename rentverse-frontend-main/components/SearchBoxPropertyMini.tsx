@@ -37,7 +37,7 @@ function SearchBoxPropertyMini(props: React.HTMLAttributes<HTMLDivElement>): Rea
   // Handle search functionality
   const handleSearch = async () => {
     const filters = {
-      city: whereValue || undefined,
+      search: whereValue || undefined,
       type: typeValue || undefined,
       page: 1,
       limit: 10,

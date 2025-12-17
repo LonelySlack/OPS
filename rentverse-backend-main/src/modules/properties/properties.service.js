@@ -132,6 +132,7 @@ class PropertiesService {
     userRole = 'USER'
   ) {
     const skip = (page - 1) * limit;
+    console.log('SERVICE RECEIVED FILTERS:', filters);
     const where = {};
 
     // For non-admin users, only show APPROVED properties
@@ -139,13 +140,30 @@ class PropertiesService {
       where.status = 'APPROVED';
     }
 
-    // Apply filters
+    // ======================================================
+    // 🆕 NEW: Search across Address, City, State, Title, etc.
+    // ======================================================
+    if (filters.search) {
+      where.OR = [
+        { title: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+        { address: { contains: filters.search, mode: 'insensitive' } }, // Searches street address
+        { city: { contains: filters.search, mode: 'insensitive' } },
+        { state: { contains: filters.search, mode: 'insensitive' } },
+        { zipCode: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Apply specific filters (These act as "AND" conditions with the search above)
     if (filters.propertyTypeId) where.propertyTypeId = filters.propertyTypeId;
-    if (filters.city)
-      where.city = { contains: filters.city, mode: 'insensitive' };
+    
+    // You can keep this if you want a specific city dropdown filter to still work
+    if (filters.city) where.city = { contains: filters.city, mode: 'insensitive' };
+    
     if (filters.available !== undefined)
       where.isAvailable = filters.available === 'true';
     if (filters.bedrooms) where.bedrooms = parseInt(filters.bedrooms);
+    
     // Only allow admin to filter by status
     if (filters.status && userRole === 'ADMIN') where.status = filters.status;
     if (filters.furnished !== undefined)
@@ -156,7 +174,6 @@ class PropertiesService {
       if (filters.minPrice) where.price.gte = parseFloat(filters.minPrice);
       if (filters.maxPrice) where.price.lte = parseFloat(filters.maxPrice);
     }
-
     const [properties, total] = await Promise.all([
       propertiesRepository.findMany({ where, skip, take: limit }),
       propertiesRepository.count(where),
