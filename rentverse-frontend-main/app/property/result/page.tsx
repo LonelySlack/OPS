@@ -12,6 +12,7 @@ import ContentWrapper from '@/components/ContentWrapper'
 import ButtonSecondary from '@/components/ButtonSecondary'
 import ButtonMapViewSwitcher from '@/components/ButtonMapViewSwitcher'
 
+
 function ResultsPage() {
   // 1. Add whereValue and typeValue to the destructured object
   const { 
@@ -20,10 +21,27 @@ function ResultsPage() {
     loadProperties, 
     mapData, 
     whereValue, 
-    typeValue 
+    typeValue,
+    pagination,     // Contains { page, total, pages, limit }
+    searchFilters
   } = usePropertiesStore()
   
   const [isMapView, setIsMapView] = useState(false)
+
+  const handlePageChange = (newPage: number) => {
+    // Scroll to top of list for better UX
+    const listElement = document.getElementById('property-list-container')
+    if (listElement) {
+        listElement.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
+    loadProperties({
+      ...searchFilters,
+      page: newPage
+    })
+  }
 
   // 2. Update the useEffect to prevent overwriting search results
   useEffect(() => {
@@ -121,10 +139,12 @@ function ResultsPage() {
           <div className="flex justify-between items-center mb-5">
             <div className="flex flex-col gap-2">
               <h3 className="font-serif text-xl text-teal-900">
-                {properties.length} homes within map area
+               {/* 3. 👇 UPDATE: Use real total from pagination */}
+                {pagination?.total || properties.length} homes found
               </h3>
               <p className="text-base text-teal-800">
-                Showing 1 – {properties.length}
+                {/* Calculate showing range (e.g. Showing 1-10) */}
+                Showing {((pagination.page - 1) * pagination.limit) + 1} – {Math.min(pagination.page * pagination.limit, pagination.total)}
               </p>
             </div>
             <ButtonSecondary
@@ -161,15 +181,13 @@ function ResultsPage() {
                   </SwiperSlide>
                 ))}
 
-                {/* Pagination as last slide */}
+                {/* 4. 👇 UPDATE: Connect Pagination Component (Mobile) */}
                 <SwiperSlide className="!h-auto">
                   <div className="py-8 flex justify-center items-center pr-4">
                     <Pagination
-                      currentPage={1}
-                      totalPages={15}
-                      onPageChange={(page) => {
-                        console.log('Page changed to:', page)
-                      }}
+                      currentPage={pagination.page}
+                      totalPages={pagination.pages}
+                      onPageChange={handlePageChange}
                     />
                   </div>
                 </SwiperSlide>
@@ -204,15 +222,13 @@ function ResultsPage() {
                   </SwiperSlide>
                 ))}
 
-                {/* Pagination as last slide */}
+              {/* 4. 👇 UPDATE: Connect Pagination Component (Small Screens) */}
                 <SwiperSlide className="!h-auto">
                   <div className="py-8 flex justify-center items-center pr-4 col-span-2">
                     <Pagination
-                      currentPage={1}
-                      totalPages={15}
-                      onPageChange={(page) => {
-                        console.log('Page changed to:', page)
-                      }}
+                      currentPage={pagination.page}
+                      totalPages={pagination.pages}
+                      onPageChange={handlePageChange}
                     />
                   </div>
                 </SwiperSlide>
@@ -245,15 +261,13 @@ function ResultsPage() {
                   </SwiperSlide>
                 ))}
 
-                {/* Pagination as last slide */}
+                {/* 4. 👇 UPDATE: Connect Pagination Component (Tablet) */}
                 <SwiperSlide className="!h-auto">
                   <div className="py-8 flex justify-center items-center pr-4">
                     <Pagination
-                      currentPage={1}
-                      totalPages={15}
-                      onPageChange={(page) => {
-                        console.log('Page changed to:', page)
-                      }}
+                      currentPage={pagination.page}
+                      totalPages={pagination.pages}
+                      onPageChange={handlePageChange}
                     />
                   </div>
                 </SwiperSlide>
@@ -288,15 +302,13 @@ function ResultsPage() {
                   </SwiperSlide>
                 ))}
 
-                {/* Pagination as last slide */}
+               {/* 4. 👇 UPDATE: Connect Pagination Component (Desktop) */}
                 <SwiperSlide className="!h-auto">
                   <div className="py-8 flex justify-center items-center pr-4 col-span-2">
                     <Pagination
-                      currentPage={1}
-                      totalPages={15}
-                      onPageChange={(page) => {
-                        console.log('Page changed to:', page)
-                      }}
+                      currentPage={pagination.page}
+                      totalPages={pagination.pages}
+                      onPageChange={handlePageChange}
                     />
                   </div>
                 </SwiperSlide>
