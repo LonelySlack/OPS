@@ -13,13 +13,30 @@ import ButtonSecondary from '@/components/ButtonSecondary'
 import ButtonMapViewSwitcher from '@/components/ButtonMapViewSwitcher'
 
 function ResultsPage() {
-  const { properties, isLoading, loadProperties, mapData } = usePropertiesStore()
+  // 1. Add whereValue and typeValue to the destructured object
+  const { 
+    properties, 
+    isLoading, 
+    loadProperties, 
+    mapData, 
+    whereValue, 
+    typeValue 
+  } = usePropertiesStore()
+  
   const [isMapView, setIsMapView] = useState(false)
 
+  // 2. Update the useEffect to prevent overwriting search results
   useEffect(() => {
-    // Load properties when component mounts
-    loadProperties({ limit: 10, page: 1 })
-  }, [loadProperties])
+    // Only load default properties if:
+    // A. The list is currently empty
+    // B. AND there are no active search filters (whereValue/typeValue)
+    const hasActiveSearch = whereValue || typeValue;
+    const hasResults = properties.length > 0;
+
+    if (!hasResults && !hasActiveSearch) {
+      loadProperties({ limit: 10, page: 1 })
+    }
+  }, [loadProperties, properties.length, whereValue, typeValue])
 
   const toggleView = () => {
     setIsMapView(!isMapView)
@@ -36,21 +53,18 @@ function ResultsPage() {
 
   // Map configuration - use real data from backend if available (memoized)
   const mapCenter = useMemo(() => {
-    console.log('Computing map center with mapData:', mapData)
+    // console.log('Computing map center with mapData:', mapData) // Optional: Comment out debug logs to clean console
     
     if (mapData?.latMean && mapData?.longMean) {
-      console.log('Using API map center:', { lng: mapData.longMean, lat: mapData.latMean })
+      // console.log('Using API map center:', { lng: mapData.longMean, lat: mapData.latMean })
       return { lng: mapData.longMean, lat: mapData.latMean }
     }
     
-    console.log('Using fallback map center')
+    // console.log('Using fallback map center')
     return { lng: -74.006, lat: 40.7128 } // Fallback to NYC center
   }, [mapData])
   
   const mapZoom = mapData?.depth || 12
-
-  console.log('Map center result:', mapCenter)
-  console.log('Map zoom:', mapZoom)
 
   // Create markers from properties data (memoized to prevent re-rendering)
   const propertyMarkers = useMemo(() => {
@@ -97,11 +111,6 @@ function ResultsPage() {
       }
     })
   }, [properties, mapCenter])
-
-  // Debug logging
-  console.log('Properties count:', properties.length)
-  console.log('Map center:', mapCenter)
-  console.log('Property markers:', propertyMarkers)
 
   return (
     <ContentWrapper searchBoxType="compact">

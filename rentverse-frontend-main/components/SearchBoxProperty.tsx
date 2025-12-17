@@ -88,9 +88,6 @@ function SearchBoxProperty(props: Readonly<React.HTMLAttributes<HTMLDivElement>>
   }, [setIsWhereOpen, setIsDurationOpen, setIsTypeOpen])
 
   // Load initial properties
-  useEffect(() => {
-    loadProperties()
-  }, [loadProperties])
 
   return (
     <div className={clsx(['relative', className])} {...propsRest}>
@@ -228,58 +225,39 @@ function SearchBoxProperty(props: Readonly<React.HTMLAttributes<HTMLDivElement>>
         )}
       </div>
 
-      {/* Dropdown for Duration section */}
+     {/* DROPDOWN: DURATION (Exact structure from Mini, Scaled Up) */}
       <div ref={durationRef}>
         {isDurationOpen && (
-          <div
-            className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-xl border border-slate-200 mt-2 p-6 z-50 max-w-4xl mx-auto">
-            <div className="space-y-6">
-              {/* Month Counter */}
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  <div className="font-medium text-slate-900 text-left">Month</div>
-                  <div className="text-sm text-slate-500 text-left">Rent monthly</div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={decrementMonth}
-                    className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-full hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={monthCount === 0}
-                  >
-                    <Minus size={16} className="text-slate-600" />
-                  </button>
-                  <span className="w-8 text-center font-medium text-slate-900">{monthCount}</span>
-                  <button
-                    onClick={incrementMonth}
-                    className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-full hover:border-slate-400 transition-colors"
-                  >
-                    <Plus size={16} className="text-slate-600" />
-                  </button>
-                </div>
+          <div className="absolute top-full left-0 right-0 bg-white rounded-3xl shadow-xl border border-slate-200 mt-3 p-6 z-50 max-w-4xl mx-auto">
+            <div className="text-sm font-semibold text-slate-900 mb-4">Select duration</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div
+                className="p-4 border border-slate-200 rounded-xl cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-all"
+                onClick={() => { setIsDurationOpen(false); }}
+              >
+                <div className="text-base font-semibold text-slate-900">1 Month</div>
+                <div className="text-sm text-slate-500">Short term</div>
               </div>
-
-              {/* Year Counter */}
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  <div className="font-medium text-slate-900 text-left">Year</div>
-                  <div className="text-sm text-slate-500 text-left">Rent yearly</div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={decrementYear}
-                    className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-full hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={yearCount === 0}
-                  >
-                    <Minus size={16} className="text-slate-600" />
-                  </button>
-                  <span className="w-8 text-center font-medium text-slate-900">{yearCount}</span>
-                  <button
-                    onClick={incrementYear}
-                    className="w-8 h-8 flex items-center justify-center border border-slate-300 rounded-full hover:border-slate-400 transition-colors"
-                  >
-                    <Plus size={16} className="text-slate-600" />
-                  </button>
-                </div>
+              <div
+                className="p-4 border border-slate-200 rounded-xl cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-all"
+                onClick={() => { setIsDurationOpen(false); }}
+              >
+                <div className="text-base font-semibold text-slate-900">3 Months</div>
+                <div className="text-sm text-slate-500">Medium term</div>
+              </div>
+              <div
+                className="p-4 border border-slate-200 rounded-xl cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-all"
+                onClick={() => { setIsDurationOpen(false); }}
+              >
+                <div className="text-base font-semibold text-slate-900">6 Months</div>
+                <div className="text-sm text-slate-500">Long term</div>
+              </div>
+              <div
+                className="p-4 border border-slate-200 rounded-xl cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-all"
+                onClick={() => { setIsDurationOpen(false); }}
+              >
+                <div className="text-base font-semibold text-slate-900">1 Year</div>
+                <div className="text-sm text-slate-500">Extended</div>
               </div>
             </div>
           </div>

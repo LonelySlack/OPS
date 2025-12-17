@@ -211,6 +211,7 @@ class PropertiesRepository {
         p.title ILIKE $${paramIndex} 
         OR p.city ILIKE $${paramIndex}
         OR p.address ILIKE $${paramIndex}
+        or p.state ILIKE $${paramIndex}
       )`;
       queryParams.push(`%${query.trim()}%`);
       paramIndex++;
